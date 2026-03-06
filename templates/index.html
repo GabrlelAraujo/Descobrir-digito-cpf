@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de CPF</title>
+    <style>
+        
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #121212;
+            color: #00ff00;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            background-color: #000;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            outline: none;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #00ff00;
+            color: #000;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #00cc00;
+        }
+        #terminal {
+            background-color: #000;
+            border: 1px solid #333;
+            padding: 20px;
+            height: 400px;
+            overflow-y: auto;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+        }
+        #terminal p {
+            margin: 5px 0;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Gerador de Dígitos do CPF</h2>
+        <div class="input-group">
+            <input type="text" id="cpf_input" maxlength="9" placeholder="Digite os 9 primeiros dígitos..." autocomplete="off">
+            <button onclick="calcularCPF()">Calcular</button>
+        </div>
+
+        <div id="terminal">
+            <p>> Aguardando entrada...</p>
+        </div>
+    </div>
+
+    <script>
+        //  time.sleep()
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        async function calcularCPF() {
+            // Pega o que o usuário digitou e a caixa do terminal
+            const cpfInput = document.getElementById('cpf_input').value;
+            const terminal = document.getElementById('terminal');
+            
+            // Limpa o terminal e avisa que esta conectando
+            terminal.innerHTML = '<p>> Iniciando cálculo...</p>';
+
+            try {
+                
+                const response = await fetch('/calcular', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ cpf: cpfInput })
+                });
+
+                
+                const data = await response.json();
+
+                //  Verificando se o Flask mandou algum erro
+                if (data.error) {
+                    terminal.innerHTML += `<p style="color: red;">> Erro: ${data.error}</p>`;
+                    return;
+                }
+
+               
+                for (let i = 0; i < data.steps.length; i++) {
+                    await sleep(400); // Pausa de 400 milissegundos
+                    
+                    const p = document.createElement('p');
+                    p.innerHTML = "> " + data.steps[i];
+                    terminal.appendChild(p);
+                    
+                    
+                    terminal.scrollTop = terminal.scrollHeight;
+                }
+            } catch (error) {
+                terminal.innerHTML += `<p style="color: red;">> Falha na comunicação com o servidor.</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
